@@ -1,0 +1,168 @@
+---
+title: Assignment 03
+author:
+  - name: Norah Jones
+    affiliations:
+      - id: bu
+        name: Boston University
+        city: Boston
+        state: MA
+number-sections: true
+date: '2024-11-21'
+format:
+  html:
+    theme: cerulean
+    toc: true
+    toc-depth: 2
+  docx: default
+  pdf: default  
+execute: 
+  freeze: auto
+date-modified: today
+date-format: long
+---
+
+# Load the Dataset
+The instruction below provides you with general keywords for columns used in the lightcast file. See the data schema generated after the load dataset code above to use proper column name. For each visualization, **customize colors, fonts, and styles** to avoid a **2.5-point deduction**. Also, **provide a two-sentence explanation** describing key insights drawn from the graph. 
+
+1. **Load the Raw Dataset**:
+   - Use Pyspark to the `lightcast_data.csv` file into a DataFrame:
+   - You can reuse the previous code. 
+   - [Copying code from your friend constitutes plagiarism. DO NOT DO THIS]{.bloodred-bold}.
+
+```{python}
+#| eval: true
+#| echo: true
+#| fig-align: center
+
+import pandas as pd
+import plotly.express as px
+import plotly.io as pio
+pio.renderers.default = "svg"
+from pyspark.sql import SparkSession
+import re
+import numpy as np
+import plotly.graph_objects as go
+from pyspark.sql.functions import col, split, explode, regexp_replace, transform, when
+from pyspark.sql import functions as F
+from pyspark.sql.functions import col, monotonically_increasing_id
+
+np.random.seed(42)
+
+pio.renderers.default = "notebook"
+
+# Initialize Spark Session
+spark = SparkSession.builder.appName("LightcastData").getOrCreate()
+
+# Load Data
+df = spark.read.option("header", "true").option("inferSchema", "true").option("multiLine","true").option("escape", "\"").csv("./data/lightcast_job_postings.csv")
+
+# Show Schema and Sample Data
+# print("---This is Diagnostic check, No need to print it in the final doc---")
+
+# df.printSchema() # comment this line when rendering the submission
+# df.show(5)
+```
+
+
+```{python}
+# Histogram of SALARY distribution
+fig = px.histogram(df.toPandas(), x="SALARY", nbins=50, title="Salary Distribution")
+fig.update_layout(bargap=0.1)
+```
+
+# Data Preparation
+
+```{python}
+# Step 1: Casting salary and experience columns
+df = df.withColumn("SALARY", col("SALARY").cast("float")) \
+       .withColumn("SALARY_FROM", col("SALARY_FROM").cast("float")) \
+       .withColumn("SALARY_TO", col("SALARY_TO").cast("float")) \
+       .withColumn("MIN_YEARS_EXPERIENCE", col("MIN_YEARS_EXPERIENCE").cast("float")) \
+       .withColumn("MAX_YEARS_EXPERIENCE", col("MAX_YEARS_EXPERIENCE").cast("float"))
+    
+    
+# Step 2: Computing medians for salary columns
+def compute_median(sdf, col_name):
+    q = sdf.approxQuantile(col_name, [0.5], 0.01)
+    return q[0] if q else None
+
+median_from = compute_median(df, "SALARY_FROM")
+median_to = compute_median(df, "SALARY_TO")
+
+print("Medians:", median_from, median_to)
+
+# Step 3: Imputing missing salaries, but not experience
+df = df.fillna({
+    "SALARY_FROM": median_from,
+    "SALARY_TO": median_to
+})
+
+# Step 5: Computing average salary
+df = df.withColumn("Average_Salary", (col("SALARY_FROM") + col("SALARY_TO")) / 2)
+
+# Step 6: Selecting required columns
+export_cols = [
+    "EDUCATION_LEVELS_NAME",
+    "REMOTE_TYPE_NAME",
+    "MAX_YEARS_EXPERIENCE",
+    "Average_Salary",
+    "LOT_V6_SPECIALIZED_OCCUPATION_NAME"
+]
+df_selected = df.select(*export_cols)
+
+# Step 7: Saving to CSV
+pdf = df_selected.toPandas()
+pdf.to_csv("./data/lightcast_cleaned.csv", index=False)
+
+print(" Data cleaning complete. Rows retained:", len(pdf))
+```
+
+# Salary Distribution by Industry and Employment Type
+- Compare salary variations across industries.
+- **Filter the dataset**
+  - Remove records where **salary is missing or zero**.
+- **Aggregate Data**
+  - Group by **NAICS industry codes**.
+  - Group by **employment type** and compute salary distribution.
+  - Calculate **salary percentiles** (25th, 50th, 75th) for each group.
+- **Visualize results**
+  - Create a **box plot** where:
+    - **X-axis** = `NAICS2_NAME`
+    - **Y-axis** = `SALARY_FROM`, or `SALARY_TO`, or `SALARY`
+    - Group by `EMPLOYMENT_TYPE_NAME`.
+  - Customize colors, fonts, and styles.
+- **Explanation:** Write two sentences about what the graph reveals.
+
+
+# Salary Analysis by ONET Occupation Type (Bubble Chart)
+- Analyze how salaries differ across ONET occupation types.
+- **Aggregate Data**
+  - Compute **median salary** for each occupation in the **ONET taxonomy**.
+- **Visualize results**
+  - Create a **bubble chart** where:
+    - **X-axis** = `ONET_NAME`
+    - **Y-axis** = `Median Salary`
+    - **Size** = Number of job postings
+  - Apply custom colors and font styles.
+- **Explanation:** Write two sentences about what the graph reveals.
+
+
+# Salary by Education Level
+
+- Create two groups:
+  - **Bachelor’s or lower** (Bachelor's, GED, Associate, No Education Listed)
+  - **Master’s or PhD** (Master's degree, Ph.D. or professional degree)
+- Plot scatter plots for each group using, `MAX_YEARS_EXPERIENCE` (with jitter), `Average_Salary`, `LOT_V6_SPECIALIZED_OCCUPATION_NAME`
+- Then, plot histograms overlaid with KDE curves for each group.
+- This would generate two scatter plots and two histograms.
+- **After each graph, add a short explanation** of key insights.
+
+# Salary by Remote Work Type
+- Split into three groups based on `REMOTE_TYPE_NAME`:
+  - Remote  
+  - Hybrid  
+  - Onsite (includes `[None]` and blank)
+- Plot scatter plots for each group using, `MAX_YEARS_EXPERIENCE` (with jitter), `Average_Salary`, `LOT_V6_SPECIALIZED_OCCUPATION_NAME`
+- Also, create salary histograms for all three groups.
+- **After each graph, briefly describe any patterns or comparisons.**
