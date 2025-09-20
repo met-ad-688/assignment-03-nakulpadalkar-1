@@ -16,8 +16,6 @@ format:
     toc-depth: 2
   docx: default
   pdf: default  
-execute: 
-  freeze: auto
 date-modified: today
 date-format: long
 ---
@@ -52,10 +50,10 @@ np.random.seed(42)
 pio.renderers.default = "notebook"
 
 # Initialize Spark Session
-spark = SparkSession.builder.appName("LightcastData").getOrCreate()
+# spark = SparkSession.builder.appName("LightcastData").getOrCreate()
 
 # Load Data
-df = spark.read.option("header", "true").option("inferSchema", "true").option("multiLine","true").option("escape", "\"").csv("./data/lightcast_job_postings.csv")
+# df = spark.read.option("header", "true").option("inferSchema", "true").option("multiLine","true").option("escape", "\"").csv("./data/lightcast_job_postings.csv")
 
 # Show Schema and Sample Data
 # print("---This is Diagnostic check, No need to print it in the final doc---")
@@ -64,58 +62,60 @@ df = spark.read.option("header", "true").option("inferSchema", "true").option("m
 # df.show(5)
 ```
 
+![](./figures/Q1.svg)
 
 ```{python}
 # Histogram of SALARY distribution
-fig = px.histogram(df.toPandas(), x="SALARY", nbins=50, title="Salary Distribution")
-fig.update_layout(bargap=0.1)
+# salary_df = df.filter(col("SALARY").isNotNull() & (col("SALARY") > 0))
+# fig = px.histogram(salary_df.toPandas(), x="SALARY", nbins=50, title="Salary Distribution")
+# fig.update_layout(bargap=0.1)
 ```
 
 # Data Preparation
 
 ```{python}
 # Step 1: Casting salary and experience columns
-df = df.withColumn("SALARY", col("SALARY").cast("float")) \
-       .withColumn("SALARY_FROM", col("SALARY_FROM").cast("float")) \
-       .withColumn("SALARY_TO", col("SALARY_TO").cast("float")) \
-       .withColumn("MIN_YEARS_EXPERIENCE", col("MIN_YEARS_EXPERIENCE").cast("float")) \
-       .withColumn("MAX_YEARS_EXPERIENCE", col("MAX_YEARS_EXPERIENCE").cast("float"))
+# df = df.withColumn("SALARY", col("SALARY").cast("float")) \
+#        .withColumn("SALARY_FROM", col("SALARY_FROM").cast("float")) \
+#        .withColumn("SALARY_TO", col("SALARY_TO").cast("float")) \
+#        .withColumn("MIN_YEARS_EXPERIENCE", col("MIN_YEARS_EXPERIENCE").cast("float")) \
+#        .withColumn("MAX_YEARS_EXPERIENCE", col("MAX_YEARS_EXPERIENCE").cast("float"))
     
     
-# Step 2: Computing medians for salary columns
-def compute_median(sdf, col_name):
-    q = sdf.approxQuantile(col_name, [0.5], 0.01)
-    return q[0] if q else None
+# # Step 2: Computing medians for salary columns
+# def compute_median(sdf, col_name):
+#     q = sdf.approxQuantile(col_name, [0.5], 0.01)
+#     return q[0] if q else None
 
-median_from = compute_median(df, "SALARY_FROM")
-median_to = compute_median(df, "SALARY_TO")
+# median_from = compute_median(df, "SALARY_FROM")
+# median_to = compute_median(df, "SALARY_TO")
 
-print("Medians:", median_from, median_to)
+# print("Medians:", median_from, median_to)
 
-# Step 3: Imputing missing salaries, but not experience
-df = df.fillna({
-    "SALARY_FROM": median_from,
-    "SALARY_TO": median_to
-})
+# # Step 3: Imputing missing salaries, but not experience
+# df = df.fillna({
+#     "SALARY_FROM": median_from,
+#     "SALARY_TO": median_to
+# })
 
-# Step 5: Computing average salary
-df = df.withColumn("Average_Salary", (col("SALARY_FROM") + col("SALARY_TO")) / 2)
+# # Step 5: Computing average salary
+# df = df.withColumn("Average_Salary", (col("SALARY_FROM") + col("SALARY_TO")) / 2)
 
-# Step 6: Selecting required columns
-export_cols = [
-    "EDUCATION_LEVELS_NAME",
-    "REMOTE_TYPE_NAME",
-    "MAX_YEARS_EXPERIENCE",
-    "Average_Salary",
-    "LOT_V6_SPECIALIZED_OCCUPATION_NAME"
-]
-df_selected = df.select(*export_cols)
+# # Step 6: Selecting required columns
+# export_cols = [
+#     "EDUCATION_LEVELS_NAME",
+#     "REMOTE_TYPE_NAME",
+#     "MAX_YEARS_EXPERIENCE",
+#     "Average_Salary",
+#     "LOT_V6_SPECIALIZED_OCCUPATION_NAME"
+# ]
+# df_selected = df.select(*export_cols)
 
-# Step 7: Saving to CSV
-pdf = df_selected.toPandas()
-pdf.to_csv("./data/lightcast_cleaned.csv", index=False)
+# # Step 7: Saving to CSV
+# pdf = df_selected.toPandas()
+# pdf.to_csv("./data/lightcast_cleaned.csv", index=False)
 
-print(" Data cleaning complete. Rows retained:", len(pdf))
+# print(" Data cleaning complete. Rows retained:", len(pdf))
 ```
 
 # Salary Distribution by Industry and Employment Type

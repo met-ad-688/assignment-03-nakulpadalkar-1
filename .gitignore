@@ -172,3 +172,4 @@ cython_debug/
 lightcast_job_postings.csv
 ./data/lightcast_cleaned.csv
 ./data/lightcast_job_postings.csv
+assignment03_sol.ipynb
