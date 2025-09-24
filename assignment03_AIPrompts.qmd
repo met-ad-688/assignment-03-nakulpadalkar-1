@@ -1,0 +1,75 @@
+---
+title: Assignment 03 - AI Prompts
+author:
+  - name: Norah Jones
+    affiliations:
+      - id: bu
+        name: Boston University
+        city: Boston
+        state: MA
+number-sections: true
+date: '2024-11-21'
+format:
+  html:
+    theme: cerulean
+    toc: true
+    toc-depth: 2
+  docx: default
+  pdf: default  
+date-modified: today
+date-format: long
+---
+
+
+:::{.callout-important}
+CAN YOU GIVE ME COLOR TO PLOT SCATTER PLOT FOR 6 GROUPS IN PLOTLY - #E0FFFF #B0E0E6 #AFEEEE #FFE4E1 #FFFACD #D8BFD8
+:::
+
+:::{.callout-tip}
+Absolutely! Those hex codes you've chosen form a soft, pastel palette that works beautifully for visualizing distinct groups in a scatter plot. Here's how you can use them in Plotly:
+
+### 🎨 Color Palette for 6 Groups
+These hex codes correspond to gentle tones that are easy on the eyes and offer good contrast:
+
+| Group | Color Name       | Hex Code  |
+|-------|------------------|-----------|
+| 1     | Baby Blue        | `#E0FFFF` |
+| 2     | Powder Blue      | `#B0E0E6` |
+| 3     | Blizzard Blue    | `#AFEEEE` |
+| 4     | Light Pink       | `#FFE4E1` |
+| 5     | Lemon Chiffon    | `#FFFACD` |
+| 6     | Thistle          | `#D8BFD8` |
+
+### 📊 Example in Plotly (Python)
+Here’s how you can apply these colors in a scatter plot using Plotly:
+
+```python
+import plotly.express as px
+import pandas as pd
+
+# Sample data
+df = pd.DataFrame({
+    'x': [1, 2, 3, 4, 5, 6],
+    'y': [10, 15, 13, 17, 14, 16],
+    'group': ['A', 'B', 'C', 'D', 'E', 'F']
+})
+
+# Define color mapping
+color_map = {
+    'A': '#E0FFFF',
+    'B': '#B0E0E6',
+    'C': '#AFEEEE',
+    'D': '#FFE4E1',
+    'E': '#FFFACD',
+    'F': '#D8BFD8'
+}
+
+# Plot
+fig = px.scatter(df, x='x', y='y', color='group',
+                 color_discrete_map=color_map,
+                 title='Scatter Plot with Custom Colors')
+fig.show()
+```
+
+This will give each group a distinct pastel shade, making your plot both informative and visually appealing. Want help customizing marker shapes or adding hover info? I’ve got you covered.
+:::
